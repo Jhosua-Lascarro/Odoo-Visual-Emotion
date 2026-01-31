@@ -24,8 +24,8 @@ services:
     ports:
       - "8069:8069"
     volumes:
-      - ./odoo/config/odoo.conf:/etc/odoo/odoo.conf:ro # Read Only
-      - ./odoo/extra-addons:/mnt/extra-addons:ro
+      - ./config/odoo/odoo.conf:/etc/odoo/odoo.conf:ro # Read Only
+      - ./addons:/mnt/extra-addons:ro
       - odoo_data:/var/lib/odoo
     environment:
       - HOST=db

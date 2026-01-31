@@ -1,0 +1,46 @@
+name: Odoo 18 CI
+
+on:
+  push:
+    branches: [ main, develop, "feature/**" ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set permissions
+        # We only set permissions to ensure Docker can read the repo files
+        run: chmod -R 777 config/ addons/
+
+      - name: Start Services
+        run: docker compose up -d
+
+      - name: Wait for Database Health
+        run: |
+          echo "Waiting for PostgreSQL (database container) to be healthy..."
+          timeout 60s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} database)" == "healthy" ]; do sleep 5; done'
+
+      - name: Odoo Smoke Test
+        run: |
+          echo "Checking Odoo availability on port 8069..."
+          # -S: Silent, -L: Follow redirects, -f: Fail on 4xx/5xx errors
+          timeout 60s bash -c 'until curl -SLf localhost:8069 | grep -E "odoo|login|selector"; do sleep 5; echo "Retrying..."; done'
+
+      - name: Debug Logs on Failure
+        if: failure()
+        run: |
+          echo "=== Database Logs ==="
+          docker logs database
+          echo "=== Odoo Logs ==="
+          docker logs odoo
+          docker ps -a
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

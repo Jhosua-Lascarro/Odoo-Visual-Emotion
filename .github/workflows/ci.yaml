@@ -1,0 +1,43 @@
+name: Odoo 18 Initial Setup CI
+
+on:
+  push:
+    branches: [ main, develop, feature/initial-setup ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          mkdir -p odoo/config odoo/extra-addons
+          if [ ! -f odoo/config/odoo.conf ]; then
+            printf "[options]\nadmin_passwd = admin\nproxy_mode = True" > odoo/config/odoo.conf
+          fi
+          chmod -R 777 odoo/
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for DB Health
+        run: |
+          timeout 60s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} database)" == "healthy" ]; do sleep 5; done'
+
+      - name: Smoke Test Odoo
+        run: |
+          timeout 60s bash -c 'until curl -s localhost:8069 | grep -E "200 OK|302 Found"; do sleep 5; done'
+
+      - name: Debug Logs
+        if: failure()
+        run: |
+          docker compose logs odoo
+          docker compose logs db
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

@@ -1,42 +1,45 @@
-name: Odoo 18 Initial Setup CI
+name: Odoo 18 CI
 
 on:
   push:
-    branches: [ main, develop, feature/initial-setup ]
+    branches: [ main, develop, "feature/**" ]
   pull_request:
     branches: [ main, develop ]
 
 jobs:
-  test-build:
+  test-deployment:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare environment
-        run: |
-          mkdir -p odoo/config odoo/extra-addons
-          if [ ! -f odoo/config/odoo.conf ]; then
-            printf "[options]\nadmin_passwd = admin\nproxy_mode = True" > odoo/config/odoo.conf
-          fi
-          chmod -R 777 odoo/
+      - name: Set permissions
+        # We only set permissions to ensure Docker can read the repo files
+        run: chmod -R 777 config/ addons/
 
-      - name: Start services
+      - name: Start Services
         run: docker compose up -d
 
-      - name: Wait for DB Health
+      - name: Wait for Database Health
         run: |
+          echo "Waiting for PostgreSQL (database container) to be healthy..."
           timeout 60s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} database)" == "healthy" ]; do sleep 5; done'
 
-      - name: Smoke Test Odoo
+      - name: Odoo Smoke Test
         run: |
-          timeout 60s bash -c 'until curl -s localhost:8069 | grep -E "200 OK|302 Found"; do sleep 5; done'
+          echo "Checking Odoo availability on port 8069..."
+          # -S: Silent, -L: Follow redirects, -f: Fail on 4xx/5xx errors
+          timeout 60s bash -c 'until curl -SLf localhost:8069 | grep -E "odoo|login|selector"; do sleep 5; echo "Retrying..."; done'
 
-      - name: Debug Logs
+      - name: Debug Logs on Failure
         if: failure()
         run: |
-          docker compose logs odoo
-          docker compose logs db
+          echo "=== Database Logs ==="
+          docker logs database
+          echo "=== Odoo Logs ==="
+          docker logs odoo
+          docker ps -a
 
       - name: Cleanup
         if: always()

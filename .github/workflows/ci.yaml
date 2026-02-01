@@ -14,53 +14,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Generate Self-Signed SSL Certificate
-        run: |
-          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-            -keyout config/nginx/certs/localhost.key \
-            -out config/nginx/certs/localhost.crt \
-            -subj "/C=ES/ST=Local/L=Local/O=Test/OU=IT/CN=localhost"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Install Make
+        run: sudo apt-get update && sudo apt-get install -y make
 
       - name: Set permissions
         run: chmod -R 777 config/ addons/
 
-      - name: Start Services
-        run: docker compose up -d
-
-      - name: Wait and Verify Odoo (HTTP 200)
-        run: |
-          echo "Waiting for Odoo to respond with 200 OK on https://localhost..."
-          timeout 120s bash -c '
-          until [ "$(curl -skL -w "%{http_code}" https://localhost -o /dev/null)" == "200" ]; do 
-            echo "Status is $(curl -skL -w "%{http_code}" https://localhost -o /dev/null)... retrying";
-            sleep 5; 
-          done'
-          echo "Odoo is UP and HTTPS is working!"
+      - name: Build and Verify Environment
+        run: make up
 
       - name: Debug Logs on Failure
         if: failure()
         run: |
-          echo "=== Nginx Logs ==="
           docker logs nginx
-          echo "=== Odoo Logs ==="
-          docker logs odoo
-          echo "=== Database Logs ==="
-          docker logs database
-          docker ps -a
-
-      - name: Cleanup
-        if: always()
-        run: docker compose down -v
-
-      - name: Debug Logs on Failure
-        if: failure()
-        run: |
-          echo "=== Database Logs ==="
-          docker logs database
-          echo "=== Odoo Logs ==="
           docker logs odoo
           docker ps -a
 
       - name: Cleanup
         if: always()
-        run: docker compose down -v
+        run: make prune

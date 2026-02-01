@@ -45,11 +45,8 @@ jobs:
 
       - name: Sync Main back to Develop
         run: |
-          # Configure git bot
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Merge changes to develop
           git checkout develop
           git merge main --ff-only
           git push origin develop

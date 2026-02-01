@@ -1,22 +1,22 @@
-# Docker volumes (Nunca subir datos de contenedores)
+# Docker container data volumes
 db_data/
 odoo_data/
 
-# Logs
+# Application log files
 *.log
 
-# Certificados SSL (Se generan en local o en CI, no se suben)
+# Local SSL certificate files
 config/nginx/certs/*
 !config/nginx/certs/.gitkeep
 
-# Odoo - Archivos temporales y sesiones
+# Odoo temporary session files
 *.pyc
 *.pyo
 __pycache__/
 addons/*
 !addons/.gitkeep
 
-# Archivos de entorno y SO
+# Environment and OS files
 .env
 .DS_Store
 Thumbs.db

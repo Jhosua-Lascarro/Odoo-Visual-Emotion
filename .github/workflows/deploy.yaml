@@ -1,0 +1,56 @@
+---
+name: CD Main Deploy & Sync
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Execute Remote Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Set dynamic variables
+            REPO_NAME="${{ github.event.repository.name }}"
+            PROJECT_DIR="~/$REPO_NAME"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+
+            # Clone or update repository
+            if [ ! -d "$PROJECT_DIR/.git" ]; then
+              git clone -b main $REPO_URL $PROJECT_DIR
+            else
+              cd $PROJECT_DIR
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            # Deploy with Docker
+            cd $PROJECT_DIR
+            echo "${{ secrets.ENV_FILE }}" > .env
+            docker compose up -d --build
+            docker image prune -f
+
+      - name: Sync Main back to Develop
+        run: |
+          # Configure git bot
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Merge changes to develop
+          git checkout develop
+          git merge main --ff-only
+          git push origin develop
+

@@ -1,37 +1,32 @@
 ---
-name: CI Develop Branch
+name: CI Validation
 
 on:
   pull_request:
     branches:
+      - main
       - develop
 
 jobs:
-  lint-and-test:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Validate yaml file syntax
       - name: YAML Lint
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: "./docker-compose.yaml .github/workflows/"
           config_data: "{extends: default, rules: {line-length: disable}}"
 
-      # Validate docker compose file
       - name: Validate Compose File
         run: docker compose config -q
 
-      # Test connection to VPS
       - name: Test VPS Connection
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            echo "Connection successful"
-            docker --version
+          script: echo "Connection successful"

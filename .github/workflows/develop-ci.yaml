@@ -16,18 +16,20 @@ jobs:
       - name: YAML Lint
         uses: ibiqlik/action-yamllint@v3
         with:
-          file_or_dir: "./docker-compose.yml .github/workflows/"
+          file_or_dir: "./docker-compose.yaml .github/workflows/"
           config_data: "{extends: default, rules: {line-length: disable}}"
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+          cache: 'pip' # Enable pip caching
+
+      - name: Install dependencies
+        run: pip install flake8
 
       - name: Run Flake8
-        run: |
-          pip install flake8
-          flake8 ./addons --count --select=E9,F63,F7,F82 --show-source --statistics
+        run: flake8 ./addons --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Validate Compose File
         run: docker compose config -q

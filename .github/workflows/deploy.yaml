@@ -23,12 +23,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Set dynamic variables
             REPO_NAME="${{ github.event.repository.name }}"
             PROJECT_DIR="~/$REPO_NAME"
             REPO_URL="https://github.com/${{ github.repository }}.git"
 
-            # Clone or update repository
             if [ ! -d "$PROJECT_DIR/.git" ]; then
               git clone -b main $REPO_URL $PROJECT_DIR
             else
@@ -37,7 +35,6 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # Deploy with Docker
             cd $PROJECT_DIR
             echo "${{ secrets.ENV_FILE }}" > .env
             docker compose up -d --build
@@ -50,4 +47,3 @@ jobs:
           git checkout develop
           git merge main --ff-only
           git push origin develop
-

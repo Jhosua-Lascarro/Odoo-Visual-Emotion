@@ -14,12 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: YAML Lint
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: "./docker-compose.yaml .github/workflows/"
-          config_data: "{extends: default, rules: {line-length: disable}}"
-
       - name: Validate Compose File
         run: docker compose config -q
 

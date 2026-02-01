@@ -45,7 +45,7 @@ certs:
 
 check:
 	@echo "$(GREEN)Waiting for HTTPS 200 OK...$(RESET)"
-	@for i in {1..40}; do \
+	@i=1; while [ $$i -le 40 ]; do \
 		STATUS=$$(curl -skL -w "%{http_code}" https://localhost -o /dev/null); \
 		if [ "$$STATUS" -eq 200 ]; then \
 			echo "$(GREEN)Success: Status 200$(RESET)"; \
@@ -54,6 +54,7 @@ check:
 		if [ $$(($$i % 5)) -eq 0 ]; then \
 			echo "Attempt $$i: Still waiting... (Status: $$STATUS)"; \
 		fi; \
+		i=$$(($$i + 1)); \
 		sleep 5; \
 	done; \
 	echo "$(YELLOW)Error: Timeout waiting for Odoo after 200 seconds$(RESET)"; \

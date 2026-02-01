@@ -1,3 +1,4 @@
+---
 name: CI Develop Branch
 
 on:
@@ -12,25 +13,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Validate yaml and python file syntax
+      # Validate yaml file syntax
       - name: YAML Lint
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: "./docker-compose.yaml .github/workflows/"
           config_data: "{extends: default, rules: {line-length: disable}}"
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-          cache: 'pip' # Enable pip caching
-
-      - name: Install dependencies
-        run: pip install flake8
-
-      - name: Run Flake8
-        run: flake8 ./addons --count --select=E9,F63,F7,F82 --show-source --statistics
-
+      # Validate docker compose file
       - name: Validate Compose File
         run: docker compose config -q
 

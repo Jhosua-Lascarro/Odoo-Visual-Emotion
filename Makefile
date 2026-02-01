@@ -45,15 +45,19 @@ certs:
 
 check:
 	@echo "$(GREEN)Waiting for HTTPS 200 OK...$(RESET)"
-	@for i in {1..20}; do \
+	@for i in {1..40}; do \
 		STATUS=$$(curl -skL -w "%{http_code}" https://localhost -o /dev/null); \
 		if [ "$$STATUS" -eq 200 ]; then \
 			echo "$(GREEN)Success: Status 200$(RESET)"; \
 			exit 0; \
 		fi; \
-		echo "Attempt $$i: Status is $$STATUS... retrying"; \
+		if [ $$(($$i % 5)) -eq 0 ]; then \
+			echo "Attempt $$i: Still waiting... (Status: $$STATUS)"; \
+		fi; \
 		sleep 5; \
 	done; \
-	echo "$(YELLOW)Error: Timeout waiting for Odoo$(RESET)"; \
+	echo "$(YELLOW)Error: Timeout waiting for Odoo after 200 seconds$(RESET)"; \
+	echo "--- Last 20 lines of Odoo logs ---"; \
+	docker logs --tail 20 odoo; \
 	exit 1
 

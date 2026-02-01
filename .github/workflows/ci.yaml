@@ -2,9 +2,9 @@ name: Odoo 18 CI
 
 on:
   push:
-    branches: [ main, develop, "feature/**" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ develop ]
+    branches: [ main, develop ]
 
 jobs:
   test-deployment:

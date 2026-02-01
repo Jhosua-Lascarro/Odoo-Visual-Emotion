@@ -10,9 +10,23 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for auto-commit
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: YAML Auto-Format
+        uses: google/yamlfmt-action@v0.6.1
+        with:
+          arguments: "-formatter type=basic,retain_line_breaks=false"
+
+      - name: Commit fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format YAML files"
 
       - name: YAML Lint
         uses: ibiqlik/action-yamllint@v3

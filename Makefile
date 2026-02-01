@@ -28,23 +28,23 @@ help:
 
 ssh:
 	@echo "$(GREEN)Connecting to $(HOST)...$(RESET)"
-	@ssh $(USER)@$(HOST)
+	@ssh $(VPS_USER)@$(VPS_IP)
 
 up:
 	@echo "$(GREEN)Starting services on VPS...$(RESET)"
-	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose up -d"
+	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose up -d"
 	@$(MAKE) status
 	@echo "$(YELLOW)Odoo is live at:$(RESET) https://$(HOST)"
 
 rest:
 	@echo "$(YELLOW)Restarting services on VPS...$(RESET)"
-	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose restart"
+	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose restart"
 	@$(MAKE) status
 	@echo "$(GREEN)Services restarted successfully.$(RESET)"
 
 logs:
-	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose logs -f odoo"
+	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose logs -f odoo"
 
 status:
 	@echo "$(GREEN)Current container status:$(RESET)"
-	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose ps"
+	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose ps"

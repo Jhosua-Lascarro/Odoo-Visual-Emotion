@@ -1,64 +1,50 @@
 MAKEFLAGS += --no-print-directory
 
-# Simple color setup
+# Load environment variables for local reference
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
+# Colors
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: help up down prune
+# Connection variables
+USER       := $(VPS_USER)
+HOST       := $(DOMAIN_NAME)
+TARGET_DIR := ~/Odoo-Visual-Emotion
+
+.PHONY: help ssh up rest logs status
 
 help:
 	@echo "$(YELLOW)Usage: make [target]$(RESET)"
-	@echo "  $(GREEN)up$(RESET)      Start containers"
-	@echo "  $(GREEN)down$(RESET)    Stop containers"
-	@echo "  $(GREEN)prune$(RESET)   Remove all data"
+	@echo "  $(GREEN)ssh$(RESET)     Connect to VPS"
+	@echo "  $(GREEN)up$(RESET)      Start containers (Remote)"
+	@echo "  $(GREEN)rest$(RESET)    Restart containers (Remote)"
+	@echo "  $(GREEN)logs$(RESET)    View Odoo logs (Remote)"
+	@echo "  $(GREEN)status$(RESET)  Check container status (Remote)"
 
-up: certs
-	@echo "$(GREEN)Starting services...$(RESET)"
-	@docker compose up -d > /dev/null 2>&1
-	@$(MAKE) check
-	@echo "$(YELLOW)Odoo is ready at:$(RESET) https://localhost"
+ssh:
+	@echo "$(GREEN)Connecting to $(HOST)...$(RESET)"
+	@ssh $(USER)@$(HOST)
 
-down:
-	@echo "$(YELLOW)Stopping services...$(RESET)"
-	@docker compose down > /dev/null 2>&1
-	@echo "$(GREEN)Services stopped successfully.$(RESET)"
+up:
+	@echo "$(GREEN)Starting services on VPS...$(RESET)"
+	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose up -d"
+	@$(MAKE) status
+	@echo "$(YELLOW)Odoo is live at:$(RESET) https://$(HOST)"
 
-prune:
-	@echo "$(YELLOW)Cleaning all data...$(RESET)"
-	@docker compose down -v > /dev/null 2>&1
-	@rm -rf config/nginx/certs/*.crt config/nginx/certs/*.key > /dev/null 2>&1
-	@echo "$(GREEN)All volumes and certificates removed.$(RESET)"
+rest:
+	@echo "$(YELLOW)Restarting services on VPS...$(RESET)"
+	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose restart"
+	@$(MAKE) status
+	@echo "$(GREEN)Services restarted successfully.$(RESET)"
 
-certs:
-	@echo "$(GREEN)Generating SSL certificates...$(RESET)"
-	@mkdir -p config/nginx/certs > /dev/null 2>&1
-	@if [ ! -f config/nginx/certs/localhost.crt ]; then \
-		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-			-keyout config/nginx/certs/localhost.key \
-			-out config/nginx/certs/localhost.crt \
-			-subj "/C=ES/ST=Local/L=Local/O=Dev/OU=IT/CN=localhost" > /dev/null 2>&1; \
-		echo "$(GREEN)Certificates generated.$(RESET)"; \
-	else \
-		echo "Certificates already exist."; \
-	fi
+logs:
+	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose logs -f odoo"
 
-check:
-	@echo "$(GREEN)Waiting for HTTPS 200 OK...$(RESET)"
-	@i=1; while [ $$i -le 40 ]; do \
-		STATUS=$$(curl -skL -w "%{http_code}" https://localhost -o /dev/null); \
-		if [ "$$STATUS" -eq 200 ]; then \
-			echo "$(GREEN)Success: Status 200$(RESET)"; \
-			exit 0; \
-		fi; \
-		if [ $$(($$i % 5)) -eq 0 ]; then \
-			echo "Attempt $$i: Still waiting... (Status: $$STATUS)"; \
-		fi; \
-		i=$$(($$i + 1)); \
-		sleep 5; \
-	done; \
-	echo "$(YELLOW)Error: Timeout waiting for Odoo after 200 seconds$(RESET)"; \
-	echo "--- Last 20 lines of Odoo logs ---"; \
-	docker logs --tail 20 odoo; \
-	exit 1
-
+status:
+	@echo "$(GREEN)Current container status:$(RESET)"
+	@ssh $(USER)@$(HOST) "cd $(TARGET_DIR) && docker compose ps"

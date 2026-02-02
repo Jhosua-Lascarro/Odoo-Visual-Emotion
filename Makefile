@@ -11,10 +11,7 @@ GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 RESET  := $(shell tput -Txterm sgr0)
 
-# Connection variables
-USER       := $(VPS_USER)
-HOST       := $(DOMAIN_NAME)
-TARGET_DIR := ~/Odoo-Visual-Emotion
+TARGET_DIR=~/Odoo-Visual-Emotion
 
 .PHONY: help ssh up rest logs status
 
@@ -27,24 +24,24 @@ help:
 	@echo "  $(GREEN)status$(RESET)  Check container status (Remote)"
 
 ssh:
-	@echo "$(GREEN)Connecting to $(HOST)...$(RESET)"
-	@ssh $(VPS_USER)@$(VPS_IP)
+	@echo "$(GREEN)Connecting to $(DOMAIN)...$(RESET)"
+	@ssh $(USER)@$(IP)
 
 up:
 	@echo "$(GREEN)Starting services on VPS...$(RESET)"
-	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose up -d"
+	@ssh $(USER)@$(IP) "cd $(TARGET_DIR) && docker compose up -d"
 	@$(MAKE) status
-	@echo "$(YELLOW)Odoo is live at:$(RESET) https://$(HOST)"
+	@echo "$(YELLOW)Odoo is live at:$(RESET) https://$(DOMAIN)"
 
 rest:
 	@echo "$(YELLOW)Restarting services on VPS...$(RESET)"
-	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose restart"
+	@ssh $(USER)@$(IP) "cd $(TARGET_DIR) && docker compose restart"
 	@$(MAKE) status
 	@echo "$(GREEN)Services restarted successfully.$(RESET)"
 
 logs:
-	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose logs -f odoo"
+	@ssh $(USER)@$(IP) "cd $(TARGET_DIR) && docker compose logs -f odoo"
 
 status:
 	@echo "$(GREEN)Current container status:$(RESET)"
-	@ssh $(VPS_USER)@$(VPS_IP) "cd $(TARGET_DIR) && docker compose ps"
+	@ssh $(USER)@$(IP) "cd $(TARGET_DIR) && docker compose ps"

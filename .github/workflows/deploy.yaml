@@ -1,7 +1,7 @@
 ---
 name: Production Deploy
 
-on:
+"on":
   push:
     branches:
       - main
@@ -18,18 +18,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE }}
           script: |
             if [ ! -d "${{ github.repository }}" ]; then
-                # Clone repo if missing
                 echo "Cloning repository..."
                 git clone "https://github.com/${{ github.repository }}.git"
                 cd "${{ github.repository }}"
             else
-                # Enter directory and update
                 echo "Updating existing code..."
                 cd "${{ github.repository }}"
                 git pull origin main
             fi
 
-            # Start and build containers
             docker compose up -d --build
             docker compose ps
-

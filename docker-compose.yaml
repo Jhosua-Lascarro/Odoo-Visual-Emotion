@@ -1,12 +1,11 @@
----
 services:
   database:
     image: postgres:17-alpine
     container_name: database
     environment:
+      POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_USER: ${DB_USER}
     volumes:
       - database_data:/var/lib/postgresql/data
     healthcheck:
@@ -33,10 +32,14 @@ services:
       - USER=${ODOO_USER}
       - PASSWORD=${DB_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect((\"localhost\", 8069))'"]
+      test: [
+        "CMD-SHELL",
+        "python3 -c 'import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
+        s.connect((\"localhost\", 8069))'",
+      ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
     restart: unless-stopped
     networks:
       - odoo-network

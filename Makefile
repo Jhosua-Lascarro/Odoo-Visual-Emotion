@@ -1,12 +1,12 @@
 MAKEFLAGS += --no-print-directory
 
-# Load environment variables for local reference
+# Load environment variables
 ifneq (,$(wildcard ./.env))
     include .env
     export
 endif
 
-# Colors
+# Terminal colors
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
 RESET  := $(shell tput -Txterm sgr0)

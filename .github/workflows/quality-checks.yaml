@@ -1,0 +1,152 @@
+name: CI Validation
+
+"on":
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  auto-format:
+    name: Auto-format Files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install formatters
+        run: |
+          pip install yamlfmt nginxfmt
+
+      - name: Format YAML files
+        run: |
+          cat > .yamlfmt <<EOF
+          formatter:
+            type: basic
+            retain_line_breaks: true
+            trim_trailing_whitespace: true
+          EOF
+          yamlfmt -w .
+        continue-on-error: true
+
+      - name: Format Nginx configuration
+        run: |
+          if [ -f config/nginx.conf ]; then
+            # Format nginx config file
+            nginxfmt -s 4 -i config/nginx.conf -o config/nginx.conf
+          fi
+        continue-on-error: true
+
+      - name: Commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format files [skip ci]"
+          file_pattern: "*.yaml *.yml config/*.conf"
+        continue-on-error: true
+
+  lint-yaml:
+    name: Lint YAML Files
+    runs-on: ubuntu-latest
+    needs: auto-format
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Run yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_data: |
+            extends: default
+            rules:
+              line-length:
+                max: 120
+              comments:
+                min-spaces-from-content: 1
+              truthy:
+                allowed-values: ['true', 'false', 'on']
+              document-start: disable
+
+  validate-docker:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    needs: auto-format
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set environment variables for validation
+        run: |
+          echo "SSL_CERT_PATH=/tmp/ssl/fullchain.pem" >> $GITHUB_ENV
+          echo "SSL_KEY_PATH=/tmp/ssl/privkey.pem" >> $GITHUB_ENV
+          echo "DB_NAME=test" >> $GITHUB_ENV
+          echo "DB_USER=test" >> $GITHUB_ENV
+          echo "DB_PASSWORD=test" >> $GITHUB_ENV
+          echo "ODOO_HOST=localhost" >> $GITHUB_ENV
+          echo "ODOO_USER=admin" >> $GITHUB_ENV
+
+      - name: Validate docker-compose syntax
+        run: docker compose config --quiet
+
+  validate-nginx:
+    name: Validate Nginx Config
+    runs-on: ubuntu-latest
+    needs: auto-format
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Create temporary SSL certificates
+        run: |
+          # Create temporary SSL certificates
+          mkdir -p /tmp/ssl
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout /tmp/ssl/privkey.pem \
+            -out /tmp/ssl/fullchain.pem \
+            -subj "/C=US/ST=Test/L=Test/O=Test/CN=localhost"
+
+      - name: Test nginx configuration
+        run: |
+          if [ -f config/nginx.conf ]; then
+            docker run --rm \
+              --add-host odoo:127.0.0.1 \
+              -v $(pwd)/config/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
+              -v /tmp/ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro \
+              -v /tmp/ssl/privkey.pem:/etc/nginx/ssl/privkey.pem:ro \
+              nginx:alpine nginx -t
+          else
+            echo "No nginx config found, skipping validation"
+          fi
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [lint-yaml, validate-docker, validate-nginx]
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          echo "All validation checks completed"
+          if [ "${{ needs.lint-yaml.result }}" != "success" ] || \
+             [ "${{ needs.validate-docker.result }}" != "success" ] || \
+             [ "${{ needs.validate-nginx.result }}" != "success" ]; then
+            echo "Some checks failed"
+            exit 1
+          fi

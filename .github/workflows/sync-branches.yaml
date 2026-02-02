@@ -1,11 +1,11 @@
+---
 name: Sync Develop with Main
 
-on:
+"on":
   push:
     branches:
       - main
 
-# Allow bot to push
 permissions:
   contents: write
 
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch full history
+          fetch-depth: 0
 
       - name: Set up Git
         run: |
@@ -27,7 +27,5 @@ jobs:
         run: |
           git checkout develop
           git pull origin develop
-          
           git merge origin/main --no-ff -m "chore: sync develop with main [skip ci]"
           git push origin develop
-

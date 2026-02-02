@@ -28,7 +28,7 @@ jobs:
 
       - name: Install formatters
         run: |
-          pip install yamlfmt nginxbeautifier
+          pip install yamlfmt nginxfmt
 
       - name: Format YAML files
         run: |
@@ -38,7 +38,7 @@ jobs:
       - name: Format Nginx configuration
         run: |
           if [ -f config/nginx.conf ]; then
-            nginxbeautifier -s 4 -i config/nginx.conf -o config/nginx.conf
+            nginxfmt -s 4 -i config/nginx.conf -o config/nginx.conf
           fi
         continue-on-error: true
 

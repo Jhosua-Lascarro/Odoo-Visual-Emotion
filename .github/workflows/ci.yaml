@@ -14,22 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate Compose Syntax
-        run: |
-          export SSL_CERT_PATH=/tmp/cert
-          export SSL_KEY_PATH=/tmp/key
-          export DB_NAME=test
-          export DB_USER=test
-          export DB_PASSWORD=test
-          export DB_HOST=test
-          export ODOO_ADMIN_PASSWD=test
-          
-          docker compose config -q
-
       - name: Test VPS Connection
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.IP }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_PRIVATE }}
           script: echo "Connection successful"

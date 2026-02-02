@@ -1,49 +1,31 @@
 ---
-name: CD Main Deploy & Sync
+name: Production Deploy
 
-on:
+"on":
   push:
     branches:
       - main
 
 jobs:
   deploy:
-    name: Deploy to VPS
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Execute Remote Deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.IP }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_PRIVATE }}
           script: |
-            REPO_NAME="${{ github.event.repository.name }}"
-            PROJECT_DIR="~/$REPO_NAME"
-            REPO_URL="https://github.com/${{ github.repository }}.git"
-
-            if [ ! -d "$PROJECT_DIR/.git" ]; then
-              git clone -b main $REPO_URL $PROJECT_DIR
+            if [ ! -d "${{ github.repository }}" ]; then
+                echo "Cloning repository..."
+                git clone "https://github.com/${{ github.repository }}.git"
+                cd "${{ github.repository }}"
             else
-              cd $PROJECT_DIR
-              git fetch origin main
-              git reset --hard origin/main
+                echo "Updating existing code..."
+                cd "${{ github.repository }}"
+                git pull origin main
             fi
 
-            cd $PROJECT_DIR
-            echo "${{ secrets.ENV_FILE }}" > .env
             docker compose up -d --build
-            docker image prune -f
-
-      - name: Sync Main back to Develop
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout develop
-          git merge main --ff-only
-          git push origin develop
+            docker compose ps

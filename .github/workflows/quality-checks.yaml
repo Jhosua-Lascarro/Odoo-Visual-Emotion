@@ -117,7 +117,7 @@ jobs:
         run: |
           if [ -d addons ] && [ "$(find addons -name '*.py' -type f | wc -l)" -gt 0 ]; then
             echo "Running Ruff linter on addons directory..."
-            find addons -type f -name '*.py' -exec ruff check {} +
+            find addons -type f -name '*.py' -exec ruff check --fix {} +
           else
             echo "No Python files found in addons directory, skipping..."
           fi

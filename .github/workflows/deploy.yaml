@@ -24,7 +24,8 @@ jobs:
             else
                 echo "Updating existing code..."
                 cd "${{ github.repository }}"
-                git pull origin main
+                git fetch origin main
+                git reset --hard origin/main
             fi
 
             docker compose up -d --build

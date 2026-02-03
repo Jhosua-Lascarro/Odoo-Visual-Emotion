@@ -25,7 +25,15 @@ jobs:
 
       - name: Merge main into develop
         run: |
-          git checkout develop
-          git pull origin develop
-          git merge origin/main --no-ff -m "chore: sync develop with main [skip ci]"
-          git push origin develop
+          # Check if develop branch exists remotely
+          if git ls-remote --exit-code --heads origin develop > /dev/null; then
+            echo "Develop branch exists, merging main into it..."
+            git checkout develop
+            git pull origin develop
+            git merge origin/main --no-ff -m "chore: sync develop with main [skip ci]"
+            git push origin develop
+          else
+            echo "Develop branch does not exist, creating it from main..."
+            git checkout -b develop
+            git push -u origin develop
+          fi

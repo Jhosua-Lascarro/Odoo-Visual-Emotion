@@ -97,6 +97,8 @@ jobs:
     name: Lint Python Files (Ruff)
     runs-on: ubuntu-latest
     needs: auto-format
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

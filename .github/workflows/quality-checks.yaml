@@ -27,7 +27,7 @@ jobs:
 
       - name: Install formatters
         run: |
-          pip install yamlfmt nginxfmt
+          pip install yamlfmt nginxfmt ruff
 
       - name: Format YAML files
         run: |
@@ -36,15 +36,28 @@ jobs:
             type: basic
             retain_line_breaks: true
             trim_trailing_whitespace: true
+            indent: 2
+            include_document_start: false
+            pad_line_comments: 2
           EOF
-          yamlfmt -w .
+          yamlfmt -w .github/workflows/*.yaml docker-compose.yaml
         continue-on-error: true
 
       - name: Format Nginx configuration
         run: |
           if [ -f config/nginx.conf ]; then
-            # Format nginx config file
-            nginxfmt -s 4 -i config/nginx.conf -o config/nginx.conf
+            # Format nginx config file with 4-space indentation
+            nginxfmt -i 4 config/nginx.conf
+          fi
+        continue-on-error: true
+
+      - name: Format Python files with Ruff
+        run: |
+          if [ -d addons ] && [ "$(find addons -name '*.py' -type f | wc -l)" -gt 0 ]; then
+            # Format Python files in addons directory
+            find addons -type f -name '*.py' -exec ruff format {} +
+            # Fix auto-fixable linting issues
+            find addons -type f -name '*.py' -exec ruff check --fix {} +
           fi
         continue-on-error: true
 
@@ -52,7 +65,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "style: auto-format files [skip ci]"
-          file_pattern: "*.yaml *.yml config/*.conf"
+          file_pattern: "*.yaml *.yml config/*.conf addons/**/*.py"
         continue-on-error: true
 
   lint-yaml:
@@ -79,6 +92,35 @@ jobs:
               truthy:
                 allowed-values: ['true', 'false', 'on']
               document-start: disable
+
+  lint-python:
+    name: Lint Python Files (Ruff)
+    runs-on: ubuntu-latest
+    needs: auto-format
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff linter
+        run: |
+          if [ -d addons ] && [ "$(find addons -name '*.py' -type f | wc -l)" -gt 0 ]; then
+            echo "Running Ruff linter on addons directory..."
+            find addons -type f -name '*.py' -exec ruff check {} +
+          else
+            echo "No Python files found in addons directory, skipping..."
+          fi
 
   validate-docker:
     name: Validate Docker Compose
@@ -138,13 +180,14 @@ jobs:
   summary:
     name: Validation Summary
     runs-on: ubuntu-latest
-    needs: [lint-yaml, validate-docker, validate-nginx]
+    needs: [lint-yaml, lint-python, validate-docker, validate-nginx]
     if: always()
     steps:
       - name: Check all jobs status
         run: |
           echo "All validation checks completed"
           if [ "${{ needs.lint-yaml.result }}" != "success" ] || \
+             [ "${{ needs.lint-python.result }}" != "success" ] || \
              [ "${{ needs.validate-docker.result }}" != "success" ] || \
              [ "${{ needs.validate-nginx.result }}" != "success" ]; then
             echo "Some checks failed"

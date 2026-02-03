@@ -29,7 +29,7 @@ ssh:
 
 up:
 	@echo "$(GREEN)Starting services on VPS...$(RESET)"
-	@ssh $(USER)@$(IP) "cd $(TARGET_DIR) && docker compose up -d"
+	@ssh $(USER)@$(IP) "cd $(TARGET_DIR) && docker compose up -d --remove-orphans"
 	@$(MAKE) status
 	@echo "$(YELLOW)Odoo is live at:$(RESET) https://$(DOMAIN)"
 

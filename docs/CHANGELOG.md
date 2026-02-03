@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-02-03
+
+### Added
+- Complete README.md with project structure, installation guide, and CI/CD documentation.
+- `docs/ARCHITECTURE.md` with system diagrams and service descriptions.
+- `docs/CONTRIBUTING.md` with development workflow and code standards.
+- `.github/CODEOWNERS` with team roles and code review assignments.
+- Contributors section in README.md with team structure.
+
+### Fixed
+- Duplicate `with:` key in `deploy.yaml` causing YAML parse error.
+- Spanish comments replaced with English (3-5 words) in workflow files.
+
 ## [1.0.2] - 2026-02-03
 
 ### Fixed

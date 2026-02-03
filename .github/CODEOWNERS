@@ -1,0 +1,44 @@
+# CODEOWNERS - Automatic PR reviewers
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ============================================
+# PROJECT CONTRIBUTORS
+# ============================================
+#
+# Product Owner (1)
+#   - Project vision and requirements
+#   - Feature prioritization
+#   - Stakeholder communication
+#
+# Developers (4)
+#   - Odoo addon development
+#   - Business logic implementation
+#   - Frontend views and UI
+#   - Testing and bug fixes
+#
+# DevOps Engineer (1)
+#   - Docker infrastructure
+#   - CI/CD pipelines
+#   - Server deployment
+#   - Nginx configuration
+#
+# ============================================
+
+# Default owners for everything
+* @product-owner
+
+# Odoo custom addons - Developers
+/addons/ @dev-team
+
+# Infrastructure - DevOps
+/config/ @devops
+/.github/ @devops
+/docker-compose.yaml @devops
+/Makefile @devops
+
+# Documentation - All team
+/docs/ @product-owner @dev-team
+/README.md @product-owner
+
+# Python tooling - Developers
+/pyproject.toml @dev-team

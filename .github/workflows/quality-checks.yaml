@@ -32,8 +32,8 @@ jobs:
           # Nginx
           [ -f config/nginx.conf ] && nginxfmt -i 4 config/nginx.conf
           
-          # Python (Solo formateo, sin check/lint)
-          [ -d addons ] && ruff format addons
+          # Python (format only)
+          ruff format .
         continue-on-error: true
 
       - name: Commit & Push changes

@@ -1,22 +1,18 @@
----
-name: Sync Develop with Main
+name: Sync Main to Develop
 
-"on":
+on:
   push:
     branches:
       - main
-
-permissions:
-  contents: write
 
 jobs:
   sync-branches:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Necesario para traer todas las ramas y el historial
 
       - name: Set up Git
         run: |
@@ -26,6 +22,5 @@ jobs:
       - name: Merge main into develop
         run: |
           git checkout develop
-          git pull origin develop
           git merge origin/main --no-ff -m "chore: sync develop with main [skip ci]"
           git push origin develop

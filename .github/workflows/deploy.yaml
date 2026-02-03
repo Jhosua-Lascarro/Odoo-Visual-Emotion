@@ -1,32 +1,34 @@
 ---
-name: Production Deploy
+name: Deploy to Server
 
-"on":
+on:
   push:
     branches:
-      - main
+      - main  # Se ejecuta cuando haces push a la rama main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Executing remote ssh commands using password
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.IP }}
+          host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE }}
+          port: ${{ secrets.PORT || 22 }}
           script: |
-            if [ ! -d "${{ github.repository }}" ]; then
-                echo "Cloning repository..."
-                git clone "https://github.com/${{ github.repository }}.git"
-                cd "${{ github.repository }}"
-            else
-                echo "Updating existing code..."
-                cd "${{ github.repository }}"
-                git fetch origin main
-                git reset --hard origin/main
-            fi
-
-            docker compose up -d --build
-            docker compose ps
+            # 1. Entrar al directorio del proyecto
+            cd /ruta/a/tu/proyecto/publicidad_emocion_visual
+            
+            # 2. Bajar cambios de Git
+            git pull origin main
+            
+            # 3. Reiniciar servicios (ejemplo con Docker)
+            docker-compose up -d --build
+            
+            # 4. Limpieza opcional
+            docker image prune -f

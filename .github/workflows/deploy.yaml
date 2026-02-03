@@ -30,6 +30,7 @@ jobs:
                 git fetch origin
                 # Reset to match remote main branch (discards local changes)
                 git reset --hard origin/main
+
             fi
 
             docker compose up -d --build

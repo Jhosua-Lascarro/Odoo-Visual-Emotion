@@ -2,18 +2,10 @@
 db_data/
 odoo_data/
 
-# Application log files
-*.log
-
-# Local SSL certificate files
-config/nginx/certs/*
-!config/nginx/certs/.gitkeep
-
 # Odoo temporary session files
 *.pyc
 *.pyo
 __pycache__/
-addons/*
 
 # Environment and OS files
 .env

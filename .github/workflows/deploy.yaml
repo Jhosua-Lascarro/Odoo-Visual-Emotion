@@ -28,6 +28,7 @@ jobs:
                 echo "Updating existing code..."
                 cd "$REPO_NAME"
                 git fetch origin
+                # Reset to match remote main branch (discards local changes)
                 git reset --hard origin/main
             fi
 

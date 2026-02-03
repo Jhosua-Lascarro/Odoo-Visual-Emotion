@@ -26,7 +26,7 @@ jobs:
       - name: Merge main into develop
         run: |
           # Check if develop branch exists remotely
-          if git ls-remote --exit-code --heads origin develop > /dev/null 2>&1; then
+          if git ls-remote --exit-code --heads origin develop > /dev/null; then
             echo "Develop branch exists, merging main into it..."
             git checkout develop
             git pull origin develop

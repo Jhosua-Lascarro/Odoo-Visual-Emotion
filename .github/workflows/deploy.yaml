@@ -19,7 +19,7 @@ jobs:
           script: |
             REPO_NAME="${{ github.event.repository.name }}"
             REPO_URL="https://github.com/${{ github.repository }}.git"
-            
+
             if [ ! -d "$REPO_NAME" ]; then
                 echo "Cloning repository..."
                 git clone "$REPO_URL" "$REPO_NAME"
